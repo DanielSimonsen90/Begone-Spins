@@ -1,5 +1,7 @@
 package com.danho.begone_spins;
 
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -16,6 +18,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import java.util.List;
+
+import static net.minecraft.network.chat.Component.*;
 //import org.slf4j.Logger;
 //import com.mojang.logging.LogUtils;
 
@@ -99,7 +103,6 @@ public class BegoneSpins
     private ItemEntity createItemEntity(Entity entity, Item item, ItemStack handItem) {
         int lootingLevel = handItem.getEnchantmentLevel(Enchantments.MOB_LOOTING);
         int count = 1 + (int) (Math.random() * lootingLevel);
-        ItemEntity itemEntity = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), new ItemStack(item, count));
-        return itemEntity;
+        return new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), new ItemStack(item, count));
     }
 }
