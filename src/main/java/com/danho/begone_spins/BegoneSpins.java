@@ -2,8 +2,13 @@ package com.danho.begone_spins;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.*;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityEvent;
+import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -39,7 +44,6 @@ public class BegoneSpins
 
     }
 
-    // Prevent spider spawn
     @SubscribeEvent
     public void onSpiderSpawn(final EntityEvent event)
     {
@@ -49,8 +53,53 @@ public class BegoneSpins
         EntityType entityType = entity.getType();
         List<EntityType> spiderTypes = List.of(EntityType.SPIDER, EntityType.CAVE_SPIDER);
         if (spiderTypes.contains(entityType))
-        {
             event.setCanceled(true);
+    }
+
+    @SubscribeEvent
+    public void onZombieTypeKilled(final LivingDropsEvent event)
+    {
+        Entity entity = event.getEntity();
+        if (entity == null) return;
+
+        EntityType entityType = entity.getType();
+        List<EntityType> zombieTypes = List.of(
+                EntityType.ZOMBIE,
+                EntityType.ZOMBIE_VILLAGER,
+                EntityType.DROWNED,
+                EntityType.HUSK,
+                EntityType.ZOMBIFIED_PIGLIN);
+        if (!zombieTypes.contains(entityType)) return;
+
+        Entity entityCausedDeath = event.getSource().getEntity();
+        if (!(entityCausedDeath instanceof Player player)) return;
+
+        ItemStack mainHandItem = player.getMainHandItem();
+        boolean shouldDropString = shouldDropItem(mainHandItem, 0.5); // 50% chance
+        boolean shouldDropEye = shouldDropItem(mainHandItem, 0.1); // 10% chance
+
+        if (shouldDropString) event.getDrops().add(createItemEntity(entity, Items.STRING, mainHandItem));
+        if (shouldDropEye) event.getDrops().add(createItemEntity(entity, Items.SPIDER_EYE, mainHandItem));
+    }
+
+    private boolean shouldDropItem(ItemStack handItem, double chance) {
+        Item item = handItem.getItem();
+        if (item instanceof SwordItem || item instanceof AxeItem) {
+            chance += 0.05;
         }
+
+        int lootingLevel = handItem.getEnchantmentLevel(Enchantments.MOB_LOOTING);
+        if (lootingLevel > 0) {
+            chance += 0.1 * lootingLevel;
+        }
+
+        return Math.random() < chance;
+    }
+
+    private ItemEntity createItemEntity(Entity entity, Item item, ItemStack handItem) {
+        int lootingLevel = handItem.getEnchantmentLevel(Enchantments.MOB_LOOTING);
+        int count = 1 + (int) (Math.random() * lootingLevel);
+        ItemEntity itemEntity = new ItemEntity(entity.level(), entity.getX(), entity.getY(), entity.getZ(), new ItemStack(item, count));
+        return itemEntity;
     }
 }
